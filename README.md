@@ -161,12 +161,7 @@ To enforce, invariants, **encapsulation** is used. While doing this, we make cli
 We implement encapsulation by setting the access modifier (or visibility) for each one of the members (fields or methods) of a class:
 - **Private** class members can only be accessed from within the object (i.e., using the implicit this pointer of the object's methods). Therefore, any other objects (of a different type) or functions cannot directly access the private members of an object. This means that private fields cannot be read or modified from outside of the object's methods and that private methods cannot be called from outside of the object's methods. 
 - **Public** class members can be accessed from anywhere. Thus, public fields can be read and modified from outside the object and public methods can be called from outside of the object.
-- **Protected** class members are visible to the class and its subclasses. this breaks encapsulation as child classes can break invariants! A compromise could be to make fields private and accessor
-- 
-- 
-- 
-- 
-- s and mutators protected.
+- **Protected** class members are visible to the class and its subclasses. this breaks encapsulation as child classes can break invariants! A compromise could be to make fields private and accessors and mutators protected.
 
 
 Note that, by default, all members of structs are publicly accessible. On the other hand, all members of a class are by default private!
@@ -204,8 +199,8 @@ A class in UML: (box with three sections)
 ![](https://i.imgur.com/rKobx4F.png)
 
 Note:
-- - -> private
-- + -> public
+- `-` -> private
+- `+` -> public
 
 Constructors and the Big 5 are not shown.
 
@@ -481,6 +476,7 @@ What if there was a way for the program to dynamically examine the actual type o
 We can do exactly so by using the keyword `virtual`. By declaring a virtual method in the superclass, and methods with the exact same signatures in base classes, we can achieve the required result!
 
 We would edit the classes and their implementation would look something like this
+
 ```cpp
 class Book {
 	std::string author, title;
@@ -625,6 +621,7 @@ Our solution would be to make X's destructor virtual!
 ### Abstract base classes and pure virtual methods
 
 To demonstrate abstract classes and pure virtual methods, let us consider three classes - Student, Coop and Regular. A student has to be one of Coop and Regular. In this case, our UML looks something like this.
+
 ![](https://imgur.com/6z3vg1x.png)
 
 Our implementation looks something like
@@ -697,8 +694,8 @@ class Text {
 }
 ```
 
-**Alternate Solution:**
-Abstract superclass.
+**Alternate Solution:** Abstract superclass.
+
 ![](https://imgur.com/dP1ghZZ.png)
 
 implementation would look like this:
