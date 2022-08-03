@@ -1,1 +1,103 @@
-# cs246
+- [ ]  *Introduction to Linux and bash*
+    - [ ]  directory structure
+    - [ ]  what is a shell?
+    - [ ]  I/O streams
+    - [ ]  globbing patterns
+    - [ ]  I/O redirection
+    - [ ]  pipes
+    - [ ]  egrep and regular expressions
+    - [ ]  file permissions
+    - [ ]  bash scripts (shbang, if, for, variables, special symbols)
+- [ ]  *Software Engineering: Testing*
+    - [ ]  what is it?
+    - [ ]  types of testing
+- [ ]  *Intro to C++*
+    - [ ]  basics on how to compile
+    - [ ]  C++ versions of standard input, output and error
+    - [ ]  #include <iostream>
+    - [ ]  using namespace std; as alternative to std::cout, etc.
+    - [ ]  how to read in primitive types such as int, and check for end-of-file or errors
+    - [ ]  C++ I/O streams
+    - [ ]  dealing with errors
+    - [ ]  std::string
+    - [ ]  file I/O
+    - [ ]  stringstreams
+    - [ ]  default function parameters
+    - [ ]  overloading
+    - [ ]  structures
+    - [ ]  constants
+    - [ ]  parameter passing
+    - [ ]  references
+    - [ ]  lvalues and rvalues
+    - [ ]  passing by reference
+    - [ ]  dynamic memory allocation
+    - [ ]  returning by value, by pointer, and by reference
+    - [ ]  operator overloading
+    - [ ]  preprocessor
+    - [ ]  using preprocessor macros for debugging
+    - [ ]  separate compilation: motivation, issues, using the make tool i.e.[Mm]akefile
+    - [ ]  use of include guards
+    - [ ]  classes (terminology: class, object, member functions/methods, this)
+    - [ ]  constructors (uniform initialization syntax i.e. {}, advantages to using, default constructors, member initialization lists i.e. MIL)
+    - [ ]  intro to compiler-provided default operations: default ctor, copy ctor, copy assignment, destructor, move ctor, move assignment
+    - [ ]  copy ctors
+    - [ ]  destructors (dtors)
+    - [ ]  copy assignment
+    - [ ]  copy-and-swap idiom
+    - [ ]  move semantics: move ctor/assignment
+    - [ ]  copy/move elision
+    - [ ]  invariants and encapsulation: "class" keyword and effects on visibility (plus types of visibility: public, private)
+- [ ]  *SE: design patterns*
+    - [ ]  Iterator design pattern
+    - [ ]  purpose behind Iterator design pattern
+    - [ ]  implementation and use code
+- [ ]  *C++*
+    - [ ]  range-based for loops
+    - [ ]  encapsulate the solution
+    - [ ]  member operators
+    - [ ]  arrays of objects
+    - [ ]  constant objects
+    - [ ]  static members
+    - [ ]  invariants and encapsulation: "class" keyword and effects on visibility (plus types of visibility: public, protected, private)
+- [ ]  *SE: UML and design patterns*
+    - [ ]  introduction to design patterns
+    - [ ]  UML class model diagrams
+    - [ ]  Iterator design pattern
+    - [ ]  purpose behind Iterator design pattern
+    - [ ]  implementation and useful code
+- [ ]  *C++*
+    - [ ]  range-based for loops
+    - [ ]  encapsulate the solution
+    - [ ]  UML class models and inheritance/generalization/specialization
+    - [ ]  C++ inheritance: intro to basic terminology and ideas
+    - [ ]  object slicing
+    - [ ]  getting the right method called i.e. virtual, references/pointers, and override
+    - [ ]  define polymorphism
+    - [ ]  array of polymorphic objects
+    - [ ]  virtual destructors
+    - [ ]  abstract base classes and pure virtual methods
+    - [ ]  inheritance and copy/move semantics
+    - [ ]  templates: what are they? STL
+    - [ ]  exceptions: what can be thrown? Handlers. Inheritance. Issue with destructors.
+- [ ]  *SE: design patterns continued*
+    - [ ]  Iterator as a design pattern. Templating the iterator. for_each
+    - [ ]  Observer design pattern.
+    - [ ]  Decorator design pattern.
+    - [ ]  Factory Method design pattern
+    - [ ]  Template Method design pattern
+    - [ ]  Non-Virtual Interface (NVI) Idiom introduced as alternate implementation of Template Method design pattern
+    - [ ]  Visitor design pattern
+    - [ ]  Pimpl idiom
+    - [ ]  Bridge design pattern
+    - [ ]  measures of design quality: cohesion and coupling, Single Responsibility Principle
+- [ ]  *C++*
+    - [ ]  std::map
+    - [ ]  compilation dependencies
+    - [ ]  exception safety
+    - [ ]  Resource Acquisition Is Initialization (RAII)
+    - [ ]  smart pointers: std::unique_ptr, std::shared_ptr
+    - [ ]  exception safety and std::vector
+    - [ ]  casting: static_cast, reinterpret_cast, const_cast, dynamic_cast
+    - [ ]  revisiting the rule of 5 i.e. finally fixing copy assignment
+    - [ ]  ~~vtables~~
+    - [ ]  multiple inheritance
