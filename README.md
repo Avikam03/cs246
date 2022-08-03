@@ -1,5 +1,7 @@
-# CS 246
+![](https://images.unsplash.com/photo-1515896769750-31548aa180ed?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1867&q=80)
 
+# CS 246
+Post midterm content 😵‍💫
 
 ## _C++_
 
@@ -738,3 +740,274 @@ class NormalBook: public AbstractBook {
 
 
 incomplete... this is hard to understand :(
+### Templates: what are they? STL
+Template programming allows us to create parameterized classes (**templates**) that are specialized to actual code when we need to use them. The advantage is that we can use the template code to generate many concrete classes without having to duplicate code.
+
+For example, let's say we need to implement a class List for int data and another for float data. We could copy and paste the code and just change the type of the private field within the Nodes. But, there's a better way to solve this problem
+
+```cpp
+template <typename T> class List {
+	struct Node {
+		T data;
+		Node *next; . . . 
+	};
+	Node *theList;
+	public:
+		. . . };
+```
+
+Now, our List class can store any type of data. To create a new List object, we need to specify the value of the parameter T, i.e., the type of data we want to store. When the program is executed, each instance of T in the code of the List will be replaced with the actual type. For example:
+
+```cpp
+List<int> li; // int is the value of the template parameter T. // So, each T in the List's code will be replaced with int.
+li.addToFront(1); 
+
+List<string> ls; // string is the value of the template parameter T. // So, each T in the List's code will be replaced with string.
+ls.addToFront("hello");
+```
+
+
+
+The Standard Template Library (**STL**) is a large collection of useful templates that already exist in C++.
+
+It contains collection classes such as lists, vectors, maps, deques, etc., which we can use to do common tasks, as well as iterators to traverse the elements in those collections and generic functions to operate on them, such as initialization, sorting, searching, and transformation of the elements.
+
+**std::vector**
+The class `std::vector` is a generic (template) implementation of dynamic-length arrays. 
+
+For example, you can use it to create a dynamic-length array of integers (note that it's defined in the library and in the std namespace):
+
+```cpp
+#include
+using namespace std;
+. . .
+vector<int> v; // because it's a template, we need to specify the type of data to store, which is int in this example
+v.emplace_back(6); // {6}
+v.emplace_back(7); // {6, 7}
+```
+
+The methods `emplace_back` or `push_back` can be used to add elements to the vector. The <ins>difference</ins> is that emplace_back creates a *new object* by using the class constructor before adding it to the array, whereas push_back *copies or moves* the content from an existing object into the array.
+
+`pop_back` removes the last element of the vector
+
+looping over vectors:
+```cpp
+for (std::size_t i = 0; i < v.size(); ++i) {
+	cout << v[i] << endl;
+}
+
+for (auto n : v) {
+	cout << n << endl;
+}
+
+// to iterate in reverse
+for (vector<int>::reverse_iterator it = v.rbegin(); it != v.rend(); ++it) {
+	...
+}
+
+// shorter
+for (auto it = v.rbegin(); it != v.rend(); ++it) {
+	...
+}
+
+```
+
+
+`erase` erases the item passed to it.
+
+
+**std::map**
+The class `std::map` can be used to implement dictionaries, in which unique keys are mapped to values. It is a generic (template) class, so we can define any type for the keys and the values. (Well, almost any type. By default, std::map uses operator< to compare and sort the keys. So, the key must be of a type that supports operator<, unless you define a different comparison function as the optional third template parameter. Check the documentation of the std::map class for more details.)
+
+For example, a map of string keys to int values (note that map is in the library and the std namespace):
+```cpp
+#include <map>
+using namespace std;
+
+...
+map<string, int> m; // string is the key type, and int is the value type
+m["abc"] = 1;
+m["def"] = 4;
+// Reading the values associated with each key
+cout << m["abc"] << endl; // 1
+cout << m["ghi"] << endl; // 0 (see note below)
+```
+
+If a key is not found when trying to read it, such as in the lastline above (highlighted in red), it is inserted and the value is default-constructed (for an int,the default value is zero).
+
+`erase` can be used to delete a key and its value
+`count` returns one if a key is found in the map or zero otherwise
+
+iterating over a map:
+```cpp
+for (auto &p : m) {
+	cout << p.first << p.second << endl; // Note: first and second are fields not 
+										 // methods
+}
+```
+
+p's type here is `std::pair<string, int>&` (pairs are defined in `<utility>`).
+### Exceptions
+Firstly, what can be thrown?  One can throw exception of type **int,float,long or custom data types like classes and structs**.
+
+In C++ (and many other object-oriented languages), when an error condition arises, the function raises (or throws) an exception (note: the words throw and raise are generally used interchangeably when referring to exceptions). Then what happens? By default, execution stops. But we can write handlers to catch exceptions and deal with them.
+
+Let's take an example where an exception is thrown if grade > 100 is entered:
+
+```cpp
+class InvalidGrade {
+	...
+}
+
+int checkGrade(int grade) {
+	if (grade >= 0 && grade <= 100) {
+	
+	} else {
+		throw InvalidGrade{};
+	}
+}
+```
+
+Now, if we compile and run the main program, the exception will be raised when the first invalid grade is encountered. Because we did not implement an exception handler, the program execution will be stopped when the exception is raised:
+
+```
+$ ./main
+terminate called after throwing an instance of 'InvalidGrade'
+Aborted (core dumped)
+```
+
+**How do we handle exceptions?**
+Let us try using a `try-catch` block.
+
+```cpp
+int main () {
+	try {
+		Student s {7899, -10, 50, 150};
+		cout << "s.grade() = " << s.grade() << endl;
+	} catch {
+		cout << "Invalid grade :(" << endl;
+	}
+}
+```
+
+All the statements that go within the `try { }` block are "protected", meaning that if an exception is raised while executing any of them, the execution will move to the catch block(s). In a catch block, we can specify the type of exception that we want to handle. In this case, we are only handling exceptions that are objects of the InvalidGrade class. If an exception of this type is raised, the statements within the `catch { }` block are executed. After that, the program's execution continues on the next line after the `catch { }` block. But if an exception of any other type is raised, that catch block won't be executed and the program will terminate immediately just as if we did not have any try-catch. Thus, if you don't have a catch block that matchesthe type of the raised exception, it'sjust like not having any catch block at all.
+
+Running and compiling right now would give us an output like this
+```
+./main
+Invalid grade.
+```
+
+let us try passing information in the exception, to make it more client friendly!
+
+```cpp
+class InvalidGrade {
+	private:
+		int grade;
+	public:
+		InvalidGrade(int grade) : grade{grade} {}
+		int getGrade() const {return grade; }
+}
+```
+
+```cpp
+...
+} else {
+	throw InvalidGrade{grade};
+}
+...
+```
+
+Now, let's update our exception handler by catching the thrown object into the variable ex. Then, we can read the information in the object to include it into our error message:
+
+```cpp
+// in main .cc
+int main () {
+	try {
+		Student s {7899, -10, 50, 150};
+		cout << "s.grade() = " << s.grade() << endl;
+	} catch (InvalidGrade ex) {
+		cout << "Invalid grade :" << ex.getGrade() << endl;
+	}
+}
+```
+
+And when we compile and run the program, we will see the updated message: 
+
+```
+$ ./main
+Invalid grade: -10
+```
+
+
+What happens when an exception is raised in a call chain? What happens is that the exception keeps getting throwed till it is caught or handled, or till control is passed back to main, in which case if there is no handler, the program terminates. 
+
+Partial Exception Handling refers to the process where a handler executes some job, where it makes corrections, and throws another exception. it could also rethrow the same exception! This is useful when a function needs to do some cleanup, but it won't be able to completely handle the error. For example, if a function allocated dynamic memory, a partial exception handler can free it before rethrowing the original exception. Therefore, the function avoids a memory leak but lets someone else handle the exception
+
+**Exceptions in Destructors**
+WARNING! NEVER let a destructor throw an exception! By default,the program will terminate immediately (`std::terminate` will be called). Although it is possible to create a throwing destructor (you would tag it with `noexcept(false)`), you still should never do this. If the destructor is being executed during stack unwinding while dealing with another exception, you now have two active, unhandled exceptions and the program will abort immediately (again, by calling `std::terminate`).
+
+**Catching Exceptions With Subclasses And By Reference**
+Firstly, let us note that we can have as many `catch {}` with one try.  
+
+```cpp
+try {
+	... // here the dots are figurative - mean that there's other code here
+} catch (CustomException e) {
+	// handle custom error
+} catch (out_of_range r) {
+	// handle out of range error
+} catch (...) { // literally dots here!
+	// handles any other exception type
+}
+```
+
+So, if an exception of type CustomException is raised in the try block, the first catch block will run. If an exception of type out_of_range is raised, the second block will run. And note that the block `catch (...) {}` acts as a catchall that handles any other type of exception not handled by the previous blocks.
+
+If your exception classes use **inheritance**, the class hierarchy is considered by the exception handling blocks. For example, if E2 is a subclass of E1, then a catch (E1) {} will handle exceptions of classes E2 and E1. This is because, due to inheritance, an E2 is a type of E1.
+
+```cpp
+class E1 {};
+class E2: public E1 {};
+try { // do something
+} catch (E1) {
+	// will handle exceptions of type E1 or E2 
+}
+```
+
+You can also write multiple catch blocks to create different handlers for specialized exceptions and base exceptions. If you do this, note thatthe exception handlers are checked in order. So,the handler for the subclass needs to appear before the handler ofthe superclass. Otherwise,the handler ofthe superclass will handle the exception first.
+
+**Note**: When you use a catch block to catch an exception based on the superclass, such as the catch (E1) block in the example above, the object is sliced into the superclass type. This means that, if you have polymorphic methods in the classes, the methods that will run will be those of the superclass. 
+
+To avoid this, we can simply **catch by reference** instead!
+
+Example:
+```cpp
+class E1 {
+	public:
+		virtual void f() {
+			cout << "E1" << endl;
+		}
+};
+
+class E2: public E1 {
+	public:
+		void f() override {
+			cout << "E2" << endl;
+		}
+}
+
+int main() {
+	try {
+		throw E2{};
+	} catch (E1 & e) {
+		e.f();
+	}
+}
+```
+
+
+**Rethrowing Exceptions in a Class Hierarchy**
+An exception can be rethrown by using the statement throw;, or by using throw s;, where s is a variable where the caught exception was stored. In general, both approaches are similar. However, they will differ if the exception is a subclass and the exception handler caught it as an object of the superclass. 
+
+For example, if we take the above example where the exception was sliced, if we do `throw s`, the sliced exception would be thrown. Instead, if we do `throw`, the original exception (unsliced) would be thrown!
