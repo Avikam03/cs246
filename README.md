@@ -1,8 +1,47 @@
 ![](https://images.unsplash.com/photo-1515896769750-31548aa180ed?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1867&q=80)
 
 # CS 246
-Post midterm content 😵‍💫
 
+
+Pre midterm theory 🤒
+
+## Software Engineering: Testing
+### What is testing?
+Software testing is an investigation conducted to verify if the software works as intended, identify existing errors, and possibly assess the quality of the software. It is an essential part of software development. Although we usually think about development as "writing code", properly testing the software is as important as writing it.
+
+Approaches for Testing
+- Human testing - manually verify if software works as intended.
+- Automated (machine) testing - test suites are implemented
+
+### Types of Software Tests
+
+#### Unit Tests
+Unit tests are conducted at the lowest level, testing only one specific module/unit of the software. The goal of unit tests is to verify if the unit of code works as intended and identify any existing errors (bugs). This can be done, for example, by testing if the functions in a module or the methods in a class work as intended and produce the expected results.
+
+#### Integration tests
+Integration tests are conducted a level above the unit tests and aim to verify if the different modules/units of the software work correctly together. Therefore, these tests should perform operations that involve multiple modules or classes and check if they work as intended.
+
+#### Functional tests (or system tests)
+Functional tests focus on the business requirements of the application. They can be conducted by executing the application with a specific set of inputs and verifying if the application produces the correct outputs. Here, we are not concerned with how the results are being produced (which should have already been tested in the unit and integration tests), only if they are correct.
+
+#### Acceptance tests
+Acceptance tests are usually part of a formal process in which the client must verify that the produced software meets all the requirements, so it can be accepted. Client acceptance is generally a condition to move to the next phase of a project, such as installing the software for real users, generating an invoice for payment, etc. 
+
+Sometimes, acceptance tests may be detailed into phases such as alpha testing (done at the end of the development, by a subset of users, but in the controlled environment of the developer) and beta testing
+
+#### Regression tests
+Regression tests are conducted after any modification in the software, to ensure that it continues working as intended, i.e., that the modification did not introduce new errors. Ideally, regression tests should be automated, so that they can quickly be executed after each code modification. One possible way to conduct regression tests is to create automated unit, integration, and functional tests, so they can be executed again after each modification.
+
+#### Performance tests
+Performance tests are designed to verify if the run-time performance of the system will be adequate. Some systems may work well when tested by the developer in a single-user environment but may have performance issues when tested, for example, with multiple concurrent users or with large data sets.
+
+
+
+
+
+
+
+Post midterm content 😵‍💫
 
 ## _SE: UML and design patterns_
 
