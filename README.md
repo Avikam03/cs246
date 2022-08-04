@@ -3,6 +3,360 @@
 # CS 246
 Post midterm content 😵‍💫
 
+
+## _SE: UML and design patterns_
+
+### Introduction to design patterns
+A design pattern is a codified solution to a common software problem. It specifically deals with a problem in object oriented software development, and thus focuses on the involved classes and their relationships. A design pattern has 4 key elements:
+1. a memorable name that describes the problem or solution, 
+2. a description of the problem to solve, 
+3. the general form of the solution, and 
+4. the consequences (results and trade-offs) of using the pattern.
+
+The guiding principle behind all ofthe design patterns is: encapsulate change on design decisions i.e. program to the interface, not the implementation. The class relationships thus rely heavily upon abstract base classes. 
+
+Patterns are more abstract than code libraries, but more concrete than design principles (e.g. coupling, cohesion, etc.). They extend the designers' vocabulary so that there is a common way to describe problems and solutions. Design patterns help designers find a suitable, more predictable design more efficiently. They can help code be refactored and evolve more easily.
+
+### UML class model diagrams
+A class in UML: (box with three sections)
+- Class
+- (Optional) Fields
+- (Optional) Methods
+
+![](https://i.imgur.com/rKobx4F.png)
+
+Note:
+- `-` -> private
+- `+` -> public
+
+Constructors and the Big 5 are not shown.
+
+### Iterator design pattern
+The whole point of the iterator design pattern is to create an abstraction of a pointer to the container without exposing the pointer to the client.
+
+We will firstly need `begin()` and `end()` methods to our iteration. Moreover, the class should support the following operations:
+- != 
+- ++
+- *
+
+here is an example to illustrate the iterator design pattern:
+```cpp
+class List {
+	struct Node;
+	Node *theList;
+
+	public:
+		class Iterator {
+			Node *curr;
+			explicit Iterator(Node *curr) : curr{curr} {} // private constructor
+
+			public:
+				int &operator*() {
+					return curr->data;
+				}
+
+				Iterator &operator++() {
+					curr = curr->next;
+					return this;
+				}
+
+				bool operator==(Iterator &other) {
+					return curr == other->curr;
+				}
+
+				bool operator!=(Iterator &other) {
+					return !(*this == other);
+				}
+				
+				friend class List;
+		}
+
+		Iterator begin() {
+			return Iterator(theList);
+		}
+
+		Iterator end() {
+			return Iterator(nullptr);
+		}
+
+		... // other list operations, including but not limited to addToFront()
+}
+```
+
+Now the client can use iterator objects to walk the list in O(n) (linear time):
+```cpp
+int main () {
+	List lst;
+	lst.addToFront(1);
+	lst.addToFront(2);
+	lst.addToFront(3);
+	for (List::Iterator it = lst.begin(); it != lst.end(); i++) {
+		cout << *it << endl; // prints 3 2 1
+	}
+
+	// we could also use automatic type detection and use the for loop
+	for (auto it = lst.begin(); it != lst.end(); i++) {
+		cout << *it << endl; // prints 3 2 1
+	}
+
+	// we could alternatively also do
+	for (auto l : lst) {
+		cout << l << endl; // interesting. implicit of l = *it;
+	}
+}
+```
+
+
+### purpose behind Iterator design pattern
+talked about in the above section!
+
+### implementation and useful code
+incomplete...
+
+
+
+
+
+
+### Template Iterator Functions
+
+Let's convert the Iterator class written before into one using Templates!
+
+```cpp
+template <typename T> class Iterator {
+	public:
+		T &operator*() const;
+		Iterator &operator++();
+		bool operator==(const Iterator &other) const;
+		bool operator!=(const Iterator &other) const;
+}
+```
+
+Let's write a generic function that executes some other function for each element returned by an iterator:
+
+```cpp
+template <typename Iter, typename Func> 
+void for_each (Iter start, Iter finish, Func f) {
+	while (start != end) {
+		f(*start);
+		start++;
+	}
+}
+```
+
+As you can see, our template function for_each works for any type Iter that supports operator*, operator++, and operator!=, and any type Func that can be called as a function. So, Iter can not only be a class like the Iterator from the example above but any other type that supports these three operations, including raw pointers! For example, we can use for_each to iterate over an array using pointers:
+
+```cpp
+void f (int n) { cout << n << endl; } 
+. . .
+int a [] = {1, 2, 3, 4, 5};
+. . .
+for_each(a, a+5, f); // prints the array
+```
+
+
+
+
+### Observer design pattern
+The Observer design pattern is also known as Dependents or Publish-Subscribe.
+-  Generate data: Publisher, Subject
+-  Consume data: Subscriber, Observer
+-  Publisher → Subscriber 
+-  Subject → Observer
+
+
+![](https://imgur.com/U9X0ppj.png)
+
+
+Implementation:
+
+```cpp
+
+// subject.h
+#ifndef _SUBJECT_H_
+#define _SUBJECT_H_
+
+#include "vector"
+
+class Observer;
+
+// this class is supposed to be abstract!
+class Subject {
+	private:
+		vector<Observer *> observers;
+	public:
+		Subject();
+		void attach (Observer *o);
+		void detach (Observer *o);
+		void notifyObservers();
+		virtual ~Subject() = 0;
+};
+
+
+// subject.cc
+#include "subject.h"
+
+Subject::Subject() {}
+Subject::~Subject() {}
+
+Subject::attach(Observer *o) {
+	observers.emplace_back(o);
+}
+
+Subject::detach(Observer *o) {
+	for (auto it = observers.begin(); it != observers.end(); i++) {
+		if (it == o) {
+			observers.erase(it);
+			break;
+		}
+	}
+}
+
+void Subject::notifyObservers() {
+	for (auto it : observers) {
+		it.notify();
+	}
+}
+
+
+```
+
+
+```cpp
+// object.h
+
+class Observer {
+	public:
+		Observer();
+		virtual void notify() = 0;
+		virtual ~Observer();
+}
+
+
+// object.cc
+#include "object.h"
+
+Observer::Observer() {}
+Observer::~Observer() {}
+
+```
+
+Let's consider the scenario where we have a bunch of bettors and a horse race. In this case, our bettors are the observers, and the horse race is the subject!
+
+```cpp
+// horserace.h
+#ifndef __HORSERACE_H__
+#define __HORSERACE_H__ 
+#include <ftream>
+#include <string>
+#include "subject.h"
+
+class HorseRace : public Subject {
+	std::fstream in;
+	std::string lastWinner;
+
+	public:
+		HorseRace(std::string source);
+		~HorseRace();
+
+		bool runRace(); // returns true if the race is successfully run
+
+		std::string getState();
+};
+
+
+// horserace.cc
+#include <iostream>
+#include "horserace.h"
+HorseRace::HorseRace(std::string source): in{source} {}
+HorseRace::~HorseRace() {}
+
+bool HorseRace::runRace() { 
+	bool result {in >> lastWinner};
+	if (result) std::cout << "Winner: " << lastWinner << std::endl;
+	return result;
+}
+
+std::string HorseRace::getState() { return lastWinner; }
+
+```
+
+```cpp
+#ifndef __BETTOR_H__
+#define __BETTOR_H__
+#include "observer.h"
+#include "horserace.h"
+
+class Bettor: public Observer {
+	HorseRace *subject;
+	const std::string name;
+	const std::string myHorse;
+	public:
+		Bettor( HorseRace *hr, std::string name, std::string horse );
+		void notify() override;
+		~Bettor(); 
+};
+
+#endif
+
+
+#include <iostream>
+#include "bettor.h"
+
+Bettor::Bettor( HorseRace *hr, std::string name, std::string horse ) : subject{hr}, 
+				name{name}, myHorse{horse} {
+	subject->attach( this );
+}
+	
+Bettor::~Bettor() {
+	subject->detach( this );
+}
+
+void Bettor::notify() {
+	std::cout << name << (subject->getState() == myHorse ?
+	" wins! Off to collect." : " loses.") << std::endl; 
+}
+
+
+```
+
+finally, our implementation looks something like
+
+```cpp
+#include <iostream>
+#include "bettor.h"
+
+int main (int argc, char **argv) {
+	std::string raceData = "race.txt";
+	if (argc > 1) raceData = argv[1];
+
+	HorseRace hr{raceData};
+
+	Bettor Larry{ &hr, "Larry", "RunsLikeACow" };
+	Bettor Moe{ &hr, "Moe", "Molasses" };
+	Bettor Curly{ &hr, "Curly", "TurtlePower" };
+
+	int count = 0;
+	Bettor *Shemp = nullptr;
+
+	while (hr.runRace()) {
+		if (count == 2) {
+			Shemp = new Bettor{&hr, "Shemp", "GreasedLightning"};
+		}
+		if (count == 5) delete Shemp;
+		hr.notifyObservers();
+		++count;
+	}
+
+	if (count  < 5) delete Shemp;
+
+}
+```
+
+
+
+
+
 ## _C++_
 
 ### Range-based for loops
@@ -179,119 +533,6 @@ incomplete... (protected definition)
 
 
 
-## _SE: UML and design patterns_
-
-### Introduction to design patterns
-A design pattern is a codified solution to a common software problem. It specifically deals with a problem in object oriented software development, and thus focuses on the involved classes and their relationships. A design pattern has 4 key elements:
-1. a memorable name that describes the problem or solution, 
-2. a description of the problem to solve, 
-3. the general form of the solution, and 
-4. the consequences (results and trade-offs) of using the pattern.
-
-The guiding principle behind all ofthe design patterns is: encapsulate change on design decisions i.e. program to the interface, not the implementation. The class relationships thus rely heavily upon abstract base classes. 
-
-Patterns are more abstract than code libraries, but more concrete than design principles (e.g. coupling, cohesion, etc.). They extend the designers' vocabulary so that there is a common way to describe problems and solutions. Design patterns help designers find a suitable, more predictable design more efficiently. They can help code be refactored and evolve more easily.
-
-### UML class model diagrams
-A class in UML: (box with three sections)
-- Class
-- (Optional) Fields
-- (Optional) Methods
-
-![](https://i.imgur.com/rKobx4F.png)
-
-Note:
-- `-` -> private
-- `+` -> public
-
-Constructors and the Big 5 are not shown.
-
-### Iterator design pattern
-The whole point of the iterator design pattern is to create an abstraction of a pointer to the container without exposing the pointer to the client.
-
-We will firstly need `begin()` and `end()` methods to our iteration. Moreover, the class should support the following operations:
-- != 
-- ++
-- *
-
-here is an example to illustrate the iterator design pattern:
-```cpp
-class List {
-	struct Node;
-	Node *theList;
-
-	public:
-		class Iterator {
-			Node *curr;
-			explicit Iterator(Node *curr) : curr{curr} {} // private constructor
-
-			public:
-				int &operator*() {
-					return curr->data;
-				}
-
-				Iterator &operator++() {
-					curr = curr->next;
-					return this;
-				}
-
-				bool operator==(Iterator &other) {
-					return curr == other->curr;
-				}
-
-				bool operator!=(Iterator &other) {
-					return !(*this == other);
-				}
-				
-				friend class List;
-		}
-
-		Iterator begin() {
-			return Iterator(theList);
-		}
-
-		Iterator end() {
-			return Iterator(nullptr);
-		}
-
-		... // other list operations, including but not limited to addToFront()
-}
-```
-
-Now the client can use iterator objects to walk the list in O(n) (linear time):
-```cpp
-int main () {
-	List lst;
-	lst.addToFront(1);
-	lst.addToFront(2);
-	lst.addToFront(3);
-	for (List::Iterator it = lst.begin(); it != lst.end(); i++) {
-		cout << *it << endl; // prints 3 2 1
-	}
-
-	// we could also use automatic type detection and use the for loop
-	for (auto it = lst.begin(); it != lst.end(); i++) {
-		cout << *it << endl; // prints 3 2 1
-	}
-
-	// we could alternatively also do
-	for (auto l : lst) {
-		cout << l << endl; // interesting. implicit of l = *it;
-	}
-}
-```
-
-
-### purpose behind Iterator design pattern
-talked about in the above section!
-
-### implementation and useful code
-incomplete...
-
-
-
-
-## _C++_
 
 ### UML class models & inheritance
 There are four main types of class relationships: association, aggregation, composition, and generalization.
