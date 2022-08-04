@@ -157,7 +157,7 @@ for_each(a, a+5, f); // prints the array
 
 
 
-### Observer design pattern
+### Observer Design pattern
 The Observer design pattern is also known as Dependents or Publish-Subscribe.
 -  Generate data: Publisher, Subject
 -  Consume data: Subscriber, Observer
@@ -353,6 +353,144 @@ int main (int argc, char **argv) {
 }
 ```
 
+
+
+### Decorator Design Pattern
+The Decorator design pattern is intended to let you add functionality or features to an object at run-time rather than to the class as a whole. These functionalities or features might also be withdrawn. Useful when extension by subclassing is impractical. We can also add features incrementally by adding new subclasses. It does mean, however, that we have end up having lots of little objects that look rather similar to each other, and differ only in how they're connected.
+
+![](https://imgur.com/qY4l4RD.png)
+
+Note:
+- The Decorator abstract base class contains a pointer to a Component. This lets us build a linked list of decoration objects by having a pointer to a Component. Since all of the decoration classes inherit from Component, we don't need to know what is in the linked list once it's built since the operation we're invoking is virtual (likely pure virtual) in the Component class.
+- Since the ConcreteComponent inherits from Component, the linked list thus terminates with a concrete component object.
+- Each call to the operation in a decoration object ends up invoking the operation in the next component. In this way, we can build up values or actions by delegating the work to the objects of which the decorated object is composed.
+- New functionalities are introduced by adding new subclasses, not modifying existing code, which reduces the chance of introducing errors. (This is the Open-Closed design principle in action! It's not testable material, but anybody interested in software development should read up on the concept—you may already be using it! There's a nice discussion on it at https://stackify.com/solid-design-open-closed-principle/)
+
+
+Implementation example: pizza w toppings 🥳
+
+```c++
+// pizza.h
+
+class Pizza {
+	public:
+		virtual float price() const = 0;
+		virtual std::string description const = 0;
+		virtual ~Pizza();
+
+};
+
+// pizza.cc
+Pizza:~Pizza() {}
+
+```
+
+```c++
+// crustandsauce.h
+
+class CrustAndSauce : public Pizza {
+	public:
+		float price() const override;
+		std::string description() const override;
+
+}
+
+
+// crustandsauce.cc
+float CrustAndSauce::price() const {
+	return 5.99;
+}
+
+std::string CrustAndSauce::description() const {
+	return "Pizza";
+};
+
+```
+
+```cpp
+// decorator.h
+
+class Decorator : public Pizza {
+	protected:
+		Pizza *component;
+	public:
+		Decorator(Pizza *component);
+		virtual ~Decorator();
+};
+
+// decorator.cc
+
+Decorator::Decorator(Pizza *component) : component{component} {}
+
+Decorator::~Decorator() {}
+```
+
+```cpp
+// topping.h
+
+class Topping : public Decorator {
+	private:
+		std::string theTopping;
+		const float thePrice;
+	public:
+		Topping(std::string theTopping, Pizza *component);
+		float price() const override;
+		std::string description const override;
+		
+};
+
+// topping.cc
+
+Topping::Topping(std::string theTopping, Pizza *component) :
+	Decorator{component}, 
+	theTopping{theTopping},
+	thePrice{0.75} {}
+
+float Topping::price() const {
+	return thePrice + component->price();
+}
+
+std::string Topping::description() const {
+	return theTopping + " with " + theTopping;
+}
+
+```
+
+Other decorators are coded the same way!
+
+```cpp
+#include <iostream>
+#include <string>
+#include <iomanip>
+#include "pizza.h"
+#include "topping.h"
+#include "stuffedcrust.h"
+#include "dippingsauce.h"
+#include "crustandsauce.h"
+
+int main() {
+	Pizza *myPizzaOrder[3];
+	myPizzaOrder[0] = new Topping{"pepperoni", new Topping{"cheese", new 
+						CrustAndSauce()}};
+	myPizzaOrder[1] = new StuffedCrust{ new Topping{"cheese", new 
+						Topping{"mushrooms", new CrustAndSauce}}};
+	myPizzaOrder[2] = new DippingSauce{"garlic", new Topping{"cheese", new 
+						Topping{"cheese", new Topping{"cheese", new 
+						Topping{"cheese", new CrustAndSauce}}}}};
+	float total = 0.0
+
+	for (int i = 0; i < 3; ++i) {
+		std::cout << myPizzaOrder[i]->description() << ": $" << std::fixed <<
+		 std::showpoint << std::setprecision(2) << myPizzaOrder[i]->price() << 
+		 std::endl;
+		total += myPizzaOrder[i]->price();
+	}
+
+	std::cout << "Total bill: $" << total << endl;
+	
+	for ( int i = 0; i < 3; ++i ) delete myPizzaOrder[i];
+}
+```
 
 
 
