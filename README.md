@@ -672,6 +672,23 @@ e->beStruckBy( *w );
 
 voila! it works.
 
+### Pimpl idiom
+In the Pimpl Idiom, the term "Pimpl"is short for "Pointer to Implementation". Since it's an idiom it is a programming technique, not a design pattern.
+
+We've already discussed how one of the strengths of OOP is the ability to encapsulate information and keep it out of the client's hands. However, by its very nature, our header files have to show the private data fields and methods, even if they're accessible to the client. They are part of the structure, and take up space. However, this also means that any time we change implementation details, even of the private information and/or methods, the client hasto recompile all of their code that includes the header file. There's a good discussion of why this is true at https://en.cppreference.com/w/cpp/language/pimpl.
+
+in PIMPL, we basically take all private fields of a class and store them in a separate newly constructed struct called `classNameImpl`.  We can then store a pointer to this struct with all details in our header file. Instead of accessing private fields normally, the only change that we would have to make now is that we'd have to access the fields by writing `var->fieldname` instead of simply `fieldname`.
+
+### Bridge Design Pattern
+incomplete...
+
+
+### Measures of design quality: cohesion and coupling, Single Responsibility Principle
+The goal to writing good code is to maintain high cohesion and low coupling! If we have high coupling, then it becomes harder to reuse individual modules since changes to one require changes to others. If we have low cohesion, then our code is poorly organized, hard to understand, and hard to maintain.
+
+![](https://imgur.com/syKh94B.png)
+
+If we apply the goal of low coupling and high cohesion consistently in our designs, then we're effectively applying the design principle called the Single Responsibility Principle (SRP).
 
 ## _C++_
 
@@ -1372,38 +1389,6 @@ for (auto it = v.rbegin(); it != v.rend(); ++it) {
 
 `erase` erases the item passed to it.
 
-
-**std::map**
-The class `std::map` can be used to implement dictionaries, in which unique keys are mapped to values. It is a generic (template) class, so we can define any type for the keys and the values. (Well, almost any type. By default, std::map uses operator< to compare and sort the keys. So, the key must be of a type that supports operator<, unless you define a different comparison function as the optional third template parameter. Check the documentation of the std::map class for more details.)
-
-For example, a map of string keys to int values (note that map is in the library and the std namespace):
-```cpp
-#include <map>
-using namespace std;
-
-...
-map<string, int> m; // string is the key type, and int is the value type
-m["abc"] = 1;
-m["def"] = 4;
-// Reading the values associated with each key
-cout << m["abc"] << endl; // 1
-cout << m["ghi"] << endl; // 0 (see note below)
-```
-
-If a key is not found when trying to read it, such as in the lastline above (highlighted in red), it is inserted and the value is default-constructed (for an int,the default value is zero).
-
-`erase` can be used to delete a key and its value
-`count` returns one if a key is found in the map or zero otherwise
-
-iterating over a map:
-```cpp
-for (auto &p : m) {
-	cout << p.first << p.second << endl; // Note: first and second are fields not 
-										 // methods
-}
-```
-
-p's type here is `std::pair<string, int>&` (pairs are defined in `<utility>`).
 ### Exceptions
 Firstly, what can be thrown?  One can throw exception of type **int,float,long or custom data types like classes and structs**.
 
@@ -1568,3 +1553,83 @@ int main() {
 An exception can be rethrown by using the statement throw;, or by using throw s;, where s is a variable where the caught exception was stored. In general, both approaches are similar. However, they will differ if the exception is a subclass and the exception handler caught it as an object of the superclass. 
 
 For example, if we take the above example where the exception was sliced, if we do `throw s`, the sliced exception would be thrown. Instead, if we do `throw`, the original exception (unsliced) would be thrown!
+
+### std::map
+The class `std::map` can be used to implement dictionaries, in which unique keys are mapped to values. It is a generic (template) class, so we can define any type for the keys and the values. (Well, almost any type. By default, std::map uses operator< to compare and sort the keys. So, the key must be of a type that supports operator<, unless you define a different comparison function as the optional third template parameter. Check the documentation of the std::map class for more details.)
+
+For example, a map of string keys to int values (note that map is in the library and the std namespace):
+```cpp
+#include <map>
+using namespace std;
+
+...
+map<string, int> m; // string is the key type, and int is the value type
+m["abc"] = 1;
+m["def"] = 4;
+// Reading the values associated with each key
+cout << m["abc"] << endl; // 1
+cout << m["ghi"] << endl; // 0 (see note below)
+```
+
+If a key is not found when trying to read it, such as in the lastline above (highlighted in red), it is inserted and the value is default-constructed (for an int,the default value is zero).
+
+`erase` can be used to delete a key and its value
+`count` returns one if a key is found in the map or zero otherwise
+
+iterating over a map:
+```cpp
+for (auto &p : m) {
+	cout << p.first << p.second << endl; // Note: first and second are fields not 
+										 // methods
+}
+```
+
+p's type here is `std::pair<string, int>&` (pairs are defined in `<utility>`).
+
+### compilation dependencies
+pretty easy concept. If a class is being used, include the header file containing the declaration of that class. If only a pointer of it is being used, or if it is the return type or parameter type in a function declaration (not definition), then we only need to forward declare the class.
+
+**Examples:**
+```cpp
+class B : public A {
+	// must include "A.h" since compiler needs to know exactly how large the 
+	// class A is to build class B
+}
+
+class C {
+	A myA; 
+	// we need "A.h" as compiler needs to know exactly how large class A is in 
+	// order to determine the size of class C.
+}
+
+class D {
+	A *myAptr;
+	// All pointers are the same size, so a forward declaration in the header file 
+	// for class D is sufficient, though the implementation file of D will need to 
+	// include a.h.
+};
+
+class E {
+	A f(A x);
+	// Despite the fact that the method E::f passes a parameter of type A by value, 
+	// and returns an instance of A by value, the method signature is only used for 
+	// type checking by the compiler. There is thus no true compilation dependency, 
+	// and a forward declaration is sufficient, though the implementation file of E 
+	// will need to include a.h.
+}
+
+class F {
+	void f() {
+		A x;
+		...
+		x.someMethod();
+		...
+	}
+};
+// Because class F wrote the implementation of method F::f inline, it is using a 
+// method that belongs to class A. Therefore, it must include the header file for A 
+// so that the compiler knows what methods A has available; however, if we moved 
+// the implementation of F::f to the implementation file of F, then we could use a // forward declaration here instead. This is another reason why it is discouraged // to write methods inline.
+
+```
+### exception safety
