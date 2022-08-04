@@ -118,7 +118,8 @@ incomplete...
 
 
 
-### Template Iterator Functions
+
+### Template Iterator 
 
 Let's convert the Iterator class written before into one using Templates!
 
@@ -156,8 +157,7 @@ for_each(a, a+5, f); // prints the array
 
 
 
-
-### Observer Design pattern
+### Observer Design Pattern
 The Observer design pattern is also known as Dependents or Publish-Subscribe.
 -  Generate data: Publisher, Subject
 -  Consume data: Subscriber, Observer
@@ -493,6 +493,101 @@ int main() {
 ```
 
 
+### Factory Method Design Pattern
+The Factory Method design pattern provides an interface for object creation, but lets the subclasses decide which object to create. It is also known as the **Virtual Constructor**.
+
+![](https://imgur.com/7AuITSI.png)
+
+Our motivating example is going to use a video game with various types of enemies (turtles or bullets), where the type of enemy created varies based upon the current game level. For example, at an easy/normal level, you might want the random creation of enemies to be 70% turtles, and 30% bullets; but, at the hard/castle level, the proportion should instead be 70% bullets and 30% turtles. Our basic inheritance hierarchy looks like:
+
+![](https://imgur.com/De3iy55.png)
+
+Now, we can have a pure virtual function in level that creates an enemy. That function can then be overriden in castle and normallevel and programmed such that less bullets and more turtles are created in a normallevel, and more bullets and less turtles are created in a castle! Our UML would then look something like
+
+![](https://imgur.com/q6YXhTd.png)
+
+our main program would be something like this:
+```cpp
+// main.cc
+Level *level = new NormalLevel;
+Enemy *enemy = level->getEnemy()
+```
+
+Regardless of what type of level the variable level stores, `level->getEnemy()` will return an enemy!  
+
+
+
+### Template Method Design Pattern
+The Template Method design pattern defines the steps of an algorithm in an operation, but lets the subclasses redefine certain steps though not the overall algorithm's structure.
+
+![](https://imgur.com/toVbNaX.png)
+
+
+Our motivating example is going to continue from our video game example. One of our Enemy subclasses was the Turtle class. Let's extend our model to have the video game contain both red and green turtles i.e. the colour of the turtle's shell is either drawn in red, or drawn in green. However, all turtles have a head, a shell, and feet.
+
+
+```cpp
+// turtle.h
+
+class Turtle {
+	void drawHead();
+	void drawFeet();
+	virtual void drawShell() = 0;
+	public: void draw();
+};
+
+
+// turtle.cc
+#include "turtle.h"
+
+void Turtle::draw() {
+	drawHead();
+	drawShell();
+	drawFeet();
+}
+
+void Turtle::drawHead() {
+	// draws head
+}
+
+void Turtle::drawFeet() {
+	// draw feet
+}
+
+```
+
+```cpp
+// redturtle.h
+
+class RedTurtle : public Turtle {
+	virtual void drawShell() override;
+};
+
+// redturtle.cc
+
+#include "redturtle.h"
+void RedTurtle::drawShell() { 
+	// draw red shell
+}
+
+```
+
+```cpp
+// greenturtle.h
+
+class GreenTurtle : public Turtle {
+	virtual void drawShell() override;
+};
+
+// greenturtle.cc
+#include "greenturtle.h"
+void GreenTurtle::drawShell() { 
+	// draw green shell
+}
+
+```
+
+The subclasses cannot change the way that a turtle is drawn, but they can change the way that the shell is drawn.
 
 
 ## _C++_
