@@ -1633,3 +1633,285 @@ class F {
 
 ```
 ### exception safety
+Consider the following function
+
+```c++
+void f() {
+	MyClass mc;
+	MyClass *p = new MyClass;
+	g();
+	delete p;
+}
+```
+
+When everything runs without exceptions, no memory is leaked. p is deleted on the last line of the function, and mc is stackallocated, so the destructor will be automatically called during stack unwinding after the end of f's execution.
+
+However, what happens if g() throws an exception? mc will still be deleted during stack unwinding. However, the last line of the function will not execute, so p will never be deleted and that memory will be leaked.
+
+A simple solution to avoid the memory leak above is to add an exception handler to f(), which will delete p and rethrow the exception to continue the stack unwinding:
+
+```cpp
+void f() {
+	MyClass mc;
+	MyClass *p = new MyClass;
+	try {
+		g();
+	} catch (...) {
+		delete p; // this works, but duplicates the line of code that we already 
+	}			//had below throw;
+	delete p;
+}
+```
+
+This solution works, i.e., the memory leak is solved. However, it's ugly and error-prone. If we forget the exception handler like the one we added to f, we will only detect the memory leak if we test a situation when g throws an exception.
+
+It would be better if we could guarantee that something (here, delete p;) will happen, no matter how we exit f (normally or by exception). It turns out that, as we saw in the previous topic, that's exactly what RAII does—it guarantees that resources will be freed at the end of the function. So, let's see how we can take advantage of that to provide exception safety to our functions.
+
+Generally speaking, there are three levels of exception safety for a function f:
+1. **Basic guarantee**: if an exception occurs, the program will be in some valid, unspecified state. Nothing leaked, class invariants maintained. 
+2. **Strong guarantee**: if f throws or propagates an exception, the state of the program will be as if f had not been called.
+3. **No-throw guarantee**: f will never throw an exception and will always accomplish its task.
+
+#### Basic Guarantee:
+As we saw above, we can use a simple exception handler to ensure that memory leaks don't occur. However, as RAII has taught us, it would be even better to not allocate memory on the stack at all! For example, here, we could simply make p a unique_ptr!
+
+```c++
+void f() {
+	MyClass mc;
+	auto p = std::make_unique<MyClass>();
+	g();
+}
+```
+
+Here, p is a stack allocated smart pointer. Thus, p's destructor will be called automatically as a part of stack unwinding regardless of how f ends. p's destructor will then of course free the dynamic memory allocated by the smart pointer without failure.
+
+Thus, using RAII is a good way of ensuring that memory leaks don't occur and basic guarantee is maintained.
+
+#### Strong Guarantee:
+As stated above, a strong exception guarantee means that if a function f throws or propagates an exception, the state of the program will be as if f had not been called. This means that any modification in the program state made by f needs to be undone if an exception is thrown. Let's see an example:
+
+```cpp
+class A { . . . };
+
+class B { . . . };
+
+class C { 
+	A a;
+	B b;
+	public:
+		void f() {
+			a.g(); // may throw (provides strong guarantee)
+			b.h(); // may throw 
+		}
+};
+```
+
+is C exception safe? if `a.g()` throws, nothing happens as state hasn't changed yet.
+However, if `b.h()` throws, and the effects of `a.g()` are non local, then state of class C has changed! The changes made would have to be undone for class C to offer strong guarantee. Otherwise, it just offers basic guarantee :(
+
+So, how do we solve this problem? We could try making copies of the private members!
+
+```cpp
+class C {
+	A a;
+	B b;
+	public:
+		void f() {
+			A atemp = a;
+			B btemp = b;
+			atemp.g(); // If this throws, original a and b still intact
+			btemp.h(); // If this throws, original a and b still intact
+			a = atemp; // But what if copy assignment throws?
+			b = btemp;
+		
+		}
+}
+```
+
+This solution is almost perfect. It doesn't consider what happens if the copy assignment or copy constructor methods throw!
+
+So, what change do we make to make sure this can't happen? A good solution would be to use the PIMPL idiom!
+
+```cpp
+
+struct CImpl {
+	A a;
+	B b;
+}
+
+class C {
+	unique_ptr<CImpl> pImpl;
+
+	public:
+		void f() {
+			auto temp = make_unique<CImpl>(*pImpl);
+			temp->a.g();
+			temp->b.h();
+			std::swap(pImpl, temp); // no possibility of throwing since we are 
+									// simply swapping pointers!
+		}
+}
+```
+
+Note that the pImpl idiom is not the only way to accomplish this, it's only one ofthe possible ways to do it.
+
+In fact, pImpl may not be the best solution if your data includes a collection (vector, map, etc.) because making a temporary copy of everything would mean copying the whole collection, which could be inefficientif the collection contains a large number of elements and only a few of them need to be modified. If that's the case, it would be better to just make copies of the objects you need to modify instead of using pImpl and copying everything.
+
+Generally, a function or method can only offer a strong guarantee if allthe functions or methods thatit calls offer a strong or a no-throw guarantee.
+
+When a function or method offers a strong guarantee, you should always documentit.
+
+#### No-Throw Guarantee
+Every function in C++ is either non-throwing or potentially throwing.
+
+Non-throwing functions guarantee that they will never throw or propagate an exception. Therefore, if an exception is thrown by a non-throwing function, the program is automatically terminated.
+
+In general, the default compiler-provided versions of the: constructor, copy constructor, move constructor, copy assignment operator, move assignment operator, and destructor are non-throwing, although there are some exceptions to this rule (which you can read about here if interested).
+
+Any other function will be potentially throwing unless you declare it with noexcept:
+```cpp
+void f() noexcept; // the function f() does not throw
+```
+
+You can also pass an expression to noexcept. If it evaluates to true, then the function is declared as non-throwing:
+```cpp
+void f() noexcept(true); // the function f() does not throw; same as just noexcept 
+void f() noexcept(false); // the function f() is potentially throwing; same as if 
+							//you did not use noexcept at all
+```
+
+When you're writing a function that you know that can never throw an exception, it is a good idea to declare it with noexcept. As explained in the section above, using non-throwing functions allow other functions to also offer the no-throw or the strong guarantee
+
+Pay special attention to the move constructor and move assignment operator. If allthey do is swap basic values or pointers,they will never throw an exception. Ifthat's the case, always declare them with noexcept. Doing so allows collection classes such as std::vector to be more efficient when storing objects of that class,
+
+
+### Resource Acquisition Is Initialization (RAII)
+The RAII idiom states that you should only EVER acquire resources as a result of initializing a stack-allocated object whose job is to manage that resource.
+
+### smart pointers: std::unique_ptr, std::shared_ptr
+
+A unique pointer is a class whose job is to be an object to manage pointers, so you don’t need to manage pointers on your own.
+
+Example: int pointers in a vector
+```cpp
+vector<unique_ptr<int>> f(int s, int (*g)(int)) {
+	vector<unique_ptr<int>> v;
+	for (int i = 0; i < s; i++) {
+		v.emplace_back(make_unique<int>(i));
+		*v[i] = g(*v[i])
+	}
+}
+```
+
+make_unique allocates memory. it could fail, g could fail, or our initial initialization of our vector could fail.
+
+- if vector fails, similar to when allocating the array failed, nothing happens as nothing has happened in our function.
+- if make unique fails, if we put 5 things in our vector, and the 6th call fails. An exception is thrown, this functions stack frame is popped off the stack. Since v is a vector, its destructor is called. v contains unique pointers, which are also classes, which will also call its destructor.
+
+class `std::unique_ptr<T>` is a class that holds a `T*`, which you supply in the vector (`unique_ptr<int> p {new int{10}}`) OR `make_unique<T>` returns a `unique_ptr<T>` and takes as args the ctor params or initializing data for T.
+
+`unique_ptr` and `make_unique` are in `<memory>`. the dtor of `unique_ptr` frees the pointer, in between you can deref the unique_ptr just like a ptr.
+
+unique_ptrs are unique….
+```cpp
+unique_ptr<c> p{new c{...}};
+unique_ptr<c> q = p; // ERROR!
+```
+
+However, you can still use raw pointers for non-owning pointers, but you must be careful
+```cpp
+void foo (int *p) {
+	*p = *p + 5; 
+}
+```
+
+```cpp
+int main() {
+	unique_ptr<int> p {new int {10}};
+	foo(p.get());
+} 
+// unique.ptr<i>::get returns the underlying raw pointer.
+```
+
+Beware:
+```cpp
+int *p = nullptr;
+if (...) {
+	unique_ptr<int> q {new int{10}};
+	p = q.get();
+}
+*p = *p + 5; // dangling
+```
+
+Here, we’re not following RAII. Dangling pointer, and hence memory error occurs.
+
+If however, there is true shared ownership, i.e, any of several pointers may need to free the data, you can use `std::shared-ptr`.
+
+```cpp
+{ 
+	// shared-ptr<myclass>
+	auto p1 = std::make_shared<myclass>();
+	// allocates space for my past objects, p1 points at it.
+	if (....) {
+		auto p2 = p1; // copy construction
+	} // p2 is popped, it doesn't free the memory it points at
+} // p1 is popped off the stack and it does free the memory.
+```
+
+shared_ptrs maintain a reference count, a count of all, shared_ptrs pointing at the same object, the memory is freed when the ref count reaches 0.
+
+However, beware that something can go wrong in cases like:
+```cpp
+{
+	int *p = new int{5};
+	shared_ptr<int> sp1{p};
+	if (...) {
+		shared_ptr<int> sp2{p};
+	} // p has been freed now
+} // double free since p is already freed
+```
+
+
+
+
+### exception safety & stl vector
+**STL Vectors**
+The STL vectors encapsulate a heap-allocated array and follow RAII: when a stack-allocated vector goes out of scope, the internal heap-allocated array is freed. For example:
+
+```cpp
+void f() {
+	vector v;
+	. . . 
+} // v goes out of scope; array is freed, MyClass destructor runs on all objs in 
+	// the vector
+```
+
+However, in the case where
+```cpp
+void g() {
+	vector v;
+	. . .
+} // v goes out of scope; pointers don't have destructors; only the array is freed
+```
+
+Pointers don't have destructors. So, in the case of a vector of pointers, any objects pointed to by the pointers in v are not freed. The vector v has no way of knowing whether deleting those pointers may be appropriate. The pointers might not own the objects they're pointing at; the objects might not even be on the heap. So if these objects need to be freed, you have to do it manually:
+
+```cpp
+for (auto &x : v) delete x;
+```
+
+Alternatively, we could use smart pointers!
+
+```cpp
+void h() {
+	vector> v;
+	. . .
+} // array is freed; unique_ptr destructors run, so the objects ARE deleted
+```
+
+unique_ptrs have destructors, which are run by the vector's destructor when v goes out of scope. Then, the memory pointed at by the unique pointers are deleted and there are no memory leaks.
+
+Therefore, using vectors of smart pointers instead of vectors of regular pointers is a good way to write exception-safe functions
+
+
+### casting: static_cast, reinterpret_cast, const_cast, dynamic_cast
