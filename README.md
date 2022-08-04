@@ -1880,7 +1880,7 @@ The STL vectors encapsulate a heap-allocated array and follow RAII: when a stack
 
 ```cpp
 void f() {
-	vector v;
+	vector <myClass> v;
 	. . . 
 } // v goes out of scope; array is freed, MyClass destructor runs on all objs in 
 	// the vector
@@ -1889,7 +1889,7 @@ void f() {
 However, in the case where
 ```cpp
 void g() {
-	vector v;
+	vector <myClass *> v;
 	. . .
 } // v goes out of scope; pointers don't have destructors; only the array is freed
 ```
@@ -1904,7 +1904,7 @@ Alternatively, we could use smart pointers!
 
 ```cpp
 void h() {
-	vector> v;
+	vector<unique_ptr<myClass>> v;
 	. . .
 } // array is freed; unique_ptr destructors run, so the objects ARE deleted
 ```
@@ -1913,5 +1913,239 @@ unique_ptrs have destructors, which are run by the vector's destructor when v go
 
 Therefore, using vectors of smart pointers instead of vectors of regular pointers is a good way to write exception-safe functions
 
+Let’s consider how `vector<r>::emplace_back` or `push_back` works.
+
+- offer the strong guarantee
+- If the array is full, (i.e size == cap)
+	- allocates new larger array
+	- adds the new element to this array
+	- copies the objects over from the old (copy ctor).
+		- if the copy ctor throws
+			- destroy new larger array
+			- old array still intact.
+			- strong guarantee
+	- delete old array.
+
+BUT copying is expensive. If the old array is just going to be thrown away. Furthermore, how can we create a vector of unique_ptr if they can’t be copied??
+
+Wouldn’t moving the objects from the old array to the new be more efficient?
+- Allocate new larger array
+- Place new object in it
+- Move the objects over (move ctor)
+- delete the old array
+
+But, `emplace_back` offers the strong guarantee. if one of those moves fail, how does the function offer the strong guarantee?
+
+The problem if we move: if the move ctor throws then `vector<T>::emplace_back` can no longer offer the strong guarantee because old array is no longer intact. But, emplace-back promises the strong guarantee.
+
+Therefore, if the move ctor offers the no throw guarantee, then emplace_back will use the move ctor, otherwise it will use the copy ctor, which may be slower.
+
+So, why is it important for emplace_back to place the new object at the front?
+incomplete...
+
+So, your move operations should provide the no throw guarantee if possible, and you should indicate that they do!
+
+```cpp
+class myClass {
+	public:
+		myClass(myClass &&other) noexcept { ... }
+		myClass &operator = (myClass &&other) noexcept { ... }
+};
+```
+
+If you know a function will never throw or propogate an exception, declare it noexcept. It facilitates optimization. At a minimum, your class’ swap and move operations should be non-throwing.
+
+If you follow PIMPL, it is trivial for your classes to have nothrow swap and move operations as they only deal with pointers.
+
 
 ### casting: static_cast, reinterpret_cast, const_cast, dynamic_cast
+
+in C:
+
+```cpp
+Node n;
+int *ip = (int *) &n;
+// trust me bro this is an int
+```
+
+A cast forces c++ to treat a `Node *` as an `int *`.
+Casts should be avoided - If you **MUST** cast, you should use C++ style casts.
+
+C++ style casts come in 4 varieties:
+
+1. **static_cast**: is for “sensible casts”, with well defined behaviour.
+
+Example: a double to int
+
+```cpp
+double d {...};
+void f(int x);
+void f(double d); // let's say, for whatever reason, we want to call the int version on d.
+f(static_cast<int> d); // calls the int version
+f(d); // calls the double version
+```
+
+The other common usecase is when we have a superclass pointer to a subclass pointer. BUT, we must know it actually points at that object.
+
+```cpp
+Book *b = new Text{...};
+Text *t = static_cast<Text *>(b); // here, we are taking responsibility that b 
+// actually points to a text. this is safe in this case
+```
+
+If it doesn’t really point to a text, it is undefined behaviour! Don’t lie to the compiler. If you do, it will get its revenge ‼️
+
+2. **reinterpret_cast**: is for unsafe, implementation dependent, “weird conversions”.
+
+Out of all casts, this should be avoided the most. Almost all uses of reinterpret_cast result in undefined behaviour.
+
+```cpp
+Student s;
+Turtle *t = reinterpret_cast<Turtle *> (&s); // forces a student to be treated like 
+											// a turtle
+t->beStruckBy(Stick{y});
+```
+
+3. **const_cast**: is for converting between const and non-const. it is the only c++ style cast that can “cast away constness”. Most usage of this will be bad.
+
+    Main usage: you are using a library that someone else wrote, and they have a function that doesn’t declare its parameter const but you know that it doesn’t really change its parameters. If you know for a fact that it doesn’t really change the parameters, and you want to use the function with a const value of yours, you can use const_cast.
+
+```cpp
+void g(int *p); // you know g doesn't actually modify *p
+void f(const int *p) {
+	... 
+	g(const_cast<int *>(p));
+}
+```
+
+On the other hand, if g does change `*p`, this is very bad !!!
+
+4. **dynamic_cast**: is it safe to convert a `Book*` to a `Text *`.
+
+```cpp
+Book *pb = ...;
+Text *t = dynamic_cast<Text *>(pb); // this is a safe cast only if pb is actually 
+									//pointing to a text
+```
+
+`dynamic_cast<T *>(p)` returns p (as a `T *`) if p actually points at a T. Else, it returns a nullptr.
+
+Works by looking at the virtual table pointer of that object.
+
+Only works on hierarchies with at least one virtual function.
+
+**Why is it bad design?**
+```cpp
+void whatIsIt(Book *pb) {
+	if (dynamic_cast<Text *> (pb)) {
+		cout << "Text" << endl;
+	} else if (dynamic_cast<Comic *> (pb)) {
+		cout << "Comic" <, endl;
+	} else {
+		cout << "book" << endl;
+	}
+}
+```
+
+- It’s highly coupled with the book hierarchy. Any changes to the book hierarchy would need changes here.
+- It is completely against polymorphism.
+
+It makes sense to simply have a virtual function that returns “Comic” or “Text”.
+However, in entirety, dynamic casting in most cases defeats the purpose of polymorphism.
+
+
+But, all of these operations are on raw pointers. Can we do equivalent operations on smart pointers? Yes
+```cpp
+// defined in <memory>
+static_pointer_cast
+const_pointer_cast
+dynamic_pointer_cast
+```
+
+Dynamic casting also works on references.
+```cpp
+Text t {...};
+Book &b = t;
+Text &t2 = dynamic_cast<Text &> (b);
+```
+
+If b actually refers to a Text, then the `dynamic_cast` returns a `Text &` to it, if not, since there is no such thing as a null reference, it raises the exception` bad_cast`.
+
+With `dynamic_cast`, we can (if we want) implement a polymorphic assignment operator.
+
+We can now write
+
+```cpp
+Text &operator=(const Book &b) { // virtual in base class
+	const Text &t = dynamic_cast<Text &> (b);
+	if (this == &t) return *this;
+	Book::operator=(t);
+	topic=t.topic; // we couldn't do this before‼️
+	return *this;
+}
+```
+
+
+But, this hasn’t really solved the problem, just passed the buck onto the client who must now handle the exceptions raised by mixed assignment through base class ptrs/refs. It’s still true that polymorphic assignment doesn’t really make sense, so preferred solution is still as it was before.
+
+All base classses should be abastract, and make the assignment operator protected in the base class.
+### Revisiting the rule of 5 i.e. finally fixing copy assignment
+incomplete...
+### Multiple inheritance
+
+The problem:
+
+```cpp
+struct A {
+	int a;
+};
+
+struct B : public A {
+	int b;
+}
+
+struct C : public A {
+	int c;
+}
+
+struct D : public B, public C {
+	int d;
+}
+```
+
+```cpp
+D d;
+d.a = 15; // error
+// D has two a's, one from its B component, and one from its C component.
+d.B::a = 15;
+d.C::a = 15; // this works ‼️
+```
+
+What do these two a fields represent? they represent the a of our superclass A. However, we have 2. It makes sense to only have one a.
+
+the deadly diamond problem / the diamond of death / the deadly diamond of death
+
+![](https://s3.us-west-2.amazonaws.com/secure.notion-static.com/7db70543-b073-4943-a686-cd7965784b26/IMG_7334.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAT73L2G45EIPT3X45%2F20220804%2Fus-west-2%2Fs3%2Faws4_request&X-Amz-Date=20220804T171809Z&X-Amz-Expires=86400&X-Amz-Signature=87fda9d66864b0fd21ca824c2a3064b220c9d07947dd85de5f72b511b93b96e5&X-Amz-SignedHeaders=host&response-content-disposition=filename%20%3D%22IMG_7334.JPG.jpg%22&x-id=GetObject)
+
+What we really want is a singular A field that represents our A component. We can achieve this through virtual inheritance.
+
+```cpp
+struct A {
+	int a;
+};
+
+struct B : public virtual A {
+	int b;
+};
+
+struct C : public virtual A {
+	int c;
+};
+
+struct D : public B, public C {
+	int d;
+};
+
+D d;
+d.a = 15; // WORKS
+```
