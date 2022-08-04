@@ -590,6 +590,89 @@ void GreenTurtle::drawShell() {
 The subclasses cannot change the way that a turtle is drawn, but they can change the way that the shell is drawn.
 
 
+### Non-Virtual Interface (NVI) Idiom
+This is an alternate implementation of the template method design pattern! The NVI things a few things differently:
+- All public methods should be non-virtual.
+- All virtual methods (exceptthe destructor) should be declared either private, or at least protected.
+
+By following NVI, we can make it so that we can change underlying implementation without changing the interface at all.
+
+incomplete... (pls read a few more examples on this)
+
+
+
+
+
+### Visitor Design Pattern
+The Visitor design pattern allows the programmer to apply an operation to be performed upon the elements contained in an object structure. New operations can be added without changing the elements on which it operates.
+
+![](https://imgur.com/5BquyYZ.png)
+
+
+To explain this pattern, let us have an example where we have an enemy and a weapon, where we need to strike the enemy using the weapon to defend ourself.
+
+![](https://imgur.com/thEXTWF.png)
+
+
+What we need is a technique called double dispatch, which requires us to combine both overloading and overriding (single dispatch). We'll pick one class, Enemy, upon which we'll apply overriding. We'll then apply overloading to the Weapon class.
+
+Our revised class model is:
+![](https://imgur.com/9T6nxYv.png)
+
+```cpp
+class Enemy {
+	virtual void beStructBy(Weapon &w) = 0;
+}
+
+class Turtle : public Enemy {
+	void beStruckBy(Weapon &w) {
+		w.strike(*this);
+	}
+}
+
+class Bullet : public Enemy {
+	void beStructBy(Weapon &w) {
+		w.strike(*this);
+	}
+}
+
+class Weapon {
+	virtual void strike (Turtle &t) = 0;
+	virtual void strike (Bullet &t) = 0;
+}
+
+class Stick : public Weapon {
+	void strike (Turtle &t) {
+		// strike turtle with stick
+	}
+
+	void strike (Bullet &t) {
+		// strike bullet with stick
+	}
+}
+
+class Rock : public Weapon {
+	void strike (Turtle &t) {
+		// strike turtle with rock
+	}
+
+	void strike (Bullet &t) {
+		// strike bullet with rock
+	}
+}
+```
+
+ok weird question/doubt : `*this` passes derefenced class, so how does passing it into a reference work? Don't we pass pointers to a function that needs a reference so that the new var then acts as an alias?
+
+```cpp
+Enemy * e = new Bullet{ ... }; // create a bullet
+Weapon * w = new Rock{ ... }; // create a rock 
+e->beStruckBy( *w );
+```
+
+voila! it works.
+
+
 ## _C++_
 
 ### Range-based for loops
