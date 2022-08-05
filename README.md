@@ -150,13 +150,6 @@ int main () {
 talked about in the above section!
 
 ### implementation and useful code
-incomplete...
-
-
-
-
-
-
 
 ### Template Iterator 
 
@@ -636,10 +629,6 @@ This is an alternate implementation of the template method design pattern! The N
 
 By following NVI, we can make it so that we can change underlying implementation without changing the interface at all.
 
-incomplete... (pls read a few more examples on this)
-
-
-
 
 
 ### Visitor Design Pattern
@@ -719,7 +708,7 @@ We've already discussed how one of the strengths of OOP is the ability to encaps
 in PIMPL, we basically take all private fields of a class and store them in a separate newly constructed struct called `classNameImpl`.  We can then store a pointer to this struct with all details in our header file. Instead of accessing private fields normally, the only change that we would have to make now is that we'd have to access the fields by writing `var->fieldname` instead of simply `fieldname`.
 
 ### Bridge Design Pattern
-incomplete...
+Won't be tested :))
 
 
 ### Measures of design quality: cohesion and coupling, Single Responsibility Principle
@@ -752,8 +741,7 @@ for (auto &n : lst) {
 ```
 
 ### Encapsulate the solution 
-??? i don't know what this means :(
-incomplete...
+???
 
 ### Member operators
 In OOP, the data contained within an object are called attributes or member fields. The procedures of an object are called methods, operations, or member functions.
