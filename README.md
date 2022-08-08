@@ -882,17 +882,6 @@ We implement encapsulation by setting the access modifier (or visibility) for ea
 
 Note that, by default, all members of structs are publicly accessible. On the other hand, all members of a class are by default private!
 
-incomplete... (protected definition)
-
-
-
-
-
-
-
-
-
-
 
 ### UML class models & inheritance
 There are four main types of class relationships: association, aggregation, composition, and generalization.
