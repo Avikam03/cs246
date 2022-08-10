@@ -1956,9 +1956,6 @@ The problem if we move: if the move ctor throws then `vector<T>::emplace_back` c
 
 Therefore, if the move ctor offers the no throw guarantee, then emplace_back will use the move ctor, otherwise it will use the copy ctor, which may be slower.
 
-So, why is it important for emplace_back to place the new object at the front?
-incomplete...
-
 So, your move operations should provide the no throw guarantee if possible, and you should indicate that they do!
 
 ```cpp
